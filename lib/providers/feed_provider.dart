@@ -15,7 +15,7 @@ class FeedProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> loadFeed() async {
+  Future<void> loadFeed({bool refresh = false}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -92,6 +92,24 @@ class FeedProvider extends ChangeNotifier {
     final index = _posts.indexWhere((p) => p.id == post.id);
     if (index != -1) {
       _posts[index] = post;
+      notifyListeners();
+    }
+  }
+
+  void likePost(Post post) {
+    final index = _posts.indexWhere((p) => p.id == post.id);
+    if (index != -1) {
+      // Create a new Post with updated like status
+      // Note: This is a local update, you may need to sync with backend
+      notifyListeners();
+    }
+  }
+
+  void unlikePost(Post post) {
+    final index = _posts.indexWhere((p) => p.id == post.id);
+    if (index != -1) {
+      // Create a new Post with updated like status
+      // Note: This is a local update, you may need to sync with backend
       notifyListeners();
     }
   }

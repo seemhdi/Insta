@@ -89,12 +89,13 @@ class InstagramScraperService {
                 return User(
                   id: '1',
                   username: username,
-                  name: username,
+                  fullName: username,
                   bio: 'Instagram User',
-                  followers: 0,
-                  following: 0,
-                  posts: 0,
-                  profilePicture: '',
+                  followersCount: 0,
+                  followingCount: 0,
+                  postsCount: 0,
+                  profileImageUrl: '',
+                  createdAt: DateTime.now(),
                 );
               }
             } catch (e) {
@@ -106,12 +107,13 @@ class InstagramScraperService {
         return User(
           id: '1',
           username: username,
-          name: username,
+          fullName: username,
           bio: 'Instagram User',
-          followers: 0,
-          following: 0,
-          posts: 0,
-          profilePicture: '',
+          followersCount: 0,
+          followingCount: 0,
+          postsCount: 0,
+          profileImageUrl: '',
+          createdAt: DateTime.now(),
         );
       }
       return null;
@@ -141,13 +143,18 @@ class InstagramScraperService {
           if (item['media'] != null) {
             posts.add(Post(
               id: item['media']['id'].toString(),
-              username: item['media']['user']['username'] ?? '',
+              author: User(
+                id: item['media']['user']?['pk']?.toString() ?? '',
+                username: item['media']['user']['username'] ?? '',
+                fullName: item['media']['user']['full_name'] ?? item['media']['user']['username'] ?? '',
+                createdAt: DateTime.now(),
+              ),
               caption: item['media']['caption'] ?? '',
-              imageUrl: item['media']['image_versions2']?['candidates']?[0]?['url'] ?? '',
-              videoUrl: item['media']['video_url'] ?? '',
-              likes: item['media']['like_count'] ?? 0,
-              comments: item['media']['comment_count'] ?? 0,
-              timestamp: DateTime.parse(item['media']['taken_at'].toString()),
+              mediaUrls: [item['media']['image_versions2']?['candidates']?[0]?['url'] ?? ''],
+              mediaTypes: [item['media']['video_url'] != null ? 'video' : 'image'],
+              likesCount: item['media']['like_count'] ?? 0,
+              commentsCount: item['media']['comment_count'] ?? 0,
+              createdAt: DateTime.parse(item['media']['taken_at'].toString()),
             ));
           }
         }
@@ -180,15 +187,20 @@ class InstagramScraperService {
           final node = edge['node'];
           posts.add(Post(
             id: node['id'].toString(),
-            username: username,
+            author: User(
+              id: node['owner']['id']?.toString() ?? '',
+              username: username,
+              fullName: username,
+              createdAt: DateTime.now(),
+            ),
             caption: node['edge_media_to_caption']['edges'].isNotEmpty 
               ? node['edge_media_to_caption']['edges'][0]['node']['text'] 
-              : '',
-            imageUrl: node['display_url'] ?? '',
-            videoUrl: node['is_video'] ? node['video_url'] ?? '' : '',
-            likes: node['edge_liked_by']['count'] ?? 0,
-            comments: node['edge_media_to_comment']['count'] ?? 0,
-            timestamp: DateTime.fromMillisecondsSinceEpoch(node['taken_at_timestamp'] * 1000),
+              : null,
+            mediaUrls: [node['display_url'] ?? ''],
+            mediaTypes: [node['is_video'] ? 'video' : 'image'],
+            likesCount: node['edge_liked_by']['count'] ?? 0,
+            commentsCount: node['edge_media_to_comment']['count'] ?? 0,
+            createdAt: DateTime.fromMillisecondsSinceEpoch(node['taken_at_timestamp'] * 1000),
           ));
         }
         return posts;
@@ -219,10 +231,18 @@ class InstagramScraperService {
         for (var item in items) {
           stories.add(Story(
             id: item['id'].toString(),
-            username: username,
-            imageUrl: item['image_versions2']?['candidates']?[0]?['url'] ?? '',
-            videoUrl: item['video_duration'] != null ? item['video_url'] ?? '' : '',
-            timestamp: DateTime.fromMillisecondsSinceEpoch(item['taken_at'] * 1000),
+            author: User(
+              id: item['user']?['pk']?.toString() ?? '',
+              username: username,
+              fullName: username,
+              createdAt: DateTime.now(),
+            ),
+            mediaUrl: item['video_duration'] != null 
+              ? (item['video_url'] ?? '') 
+              : (item['image_versions2']?['candidates']?[0]?['url'] ?? ''),
+            mediaType: item['video_duration'] != null ? 'video' : 'image',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(item['taken_at'] * 1000),
+            expiresAt: DateTime.fromMillisecondsSinceEpoch(item['taken_at'] * 1000).add(Duration(hours: 24)),
           ));
         }
         return stories;
@@ -253,9 +273,14 @@ class InstagramScraperService {
         for (var item in items) {
           comments.add(Comment(
             id: item['id'].toString(),
-            username: item['user']['username'] ?? '',
+            author: User(
+              id: item['user']?['pk']?.toString() ?? '',
+              username: item['user']['username'] ?? '',
+              fullName: item['user']['full_name'] ?? item['user']['username'] ?? '',
+              createdAt: DateTime.now(),
+            ),
             text: item['text'] ?? '',
-            timestamp: DateTime.fromMillisecondsSinceEpoch(item['created_at'] * 1000),
+            createdAt: DateTime.fromMillisecondsSinceEpoch(item['created_at'] * 1000),
           ));
         }
         return comments;
@@ -290,12 +315,13 @@ class InstagramScraperService {
           users.add(User(
             id: result['pk'].toString(),
             username: result['username'] ?? '',
-            name: result['full_name'] ?? '',
+            fullName: result['full_name'] ?? '',
             bio: result['biography'] ?? '',
-            followers: result['follower_count'] ?? 0,
-            following: result['following_count'] ?? 0,
-            posts: result['media_count'] ?? 0,
-            profilePicture: result['profile_pic_url'] ?? '',
+            profileImageUrl: result['profile_pic_url'] ?? '',
+            followersCount: result['follower_count'] ?? 0,
+            followingCount: result['following_count'] ?? 0,
+            postsCount: result['media_count'] ?? 0,
+            createdAt: DateTime.now(),
           ));
         }
         return users;
